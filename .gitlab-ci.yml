@@ -1,0 +1,33 @@
+variables:
+  GO_MIN_SUCCESSFUL_TESTS: "100000"
+
+stages:
+  - build
+  - pre-scans
+
+include:
+  - project: security/security-ci-cd-templates
+    file: /qredo-security.gitlab-ci.yml
+    ref: master
+
+compiler:
+  stage: build
+  tags:
+    - nixos-blackbird-runner
+  script:
+    - nix-build default.nix
+
+verifier:
+  stage: build
+  tags:
+    - nixos-blackbird-runner
+  script:
+    - nix-shell shell.nix --run "cd verifier && ./build && cd golang/impl && go test"
+
+docker:
+  stage: build
+  needs: ["compiler"]
+  tags:
+    - nixos-blackbird-runner
+  script:
+    - nix-build docker.nix

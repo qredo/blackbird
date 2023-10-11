@@ -1,0 +1,11 @@
+- 00 NOP - no effect
+- 01-03 YANK.n - move nth item to top of stack
+- 10-13 PEEK.n - copy nth item to top of stack
+- 40 - LOADTXN - push current transaction on stack
+- 41 - FOCUS - txn on top of stack, reduce to only focused leg (AssetFlow)
+- 42 - OUTFLOW - txn leg (AssetFlow) on top of stack, reduce to outflow as assets
+- 50 - ADDASSETS - add assets on top of stack from assets 1 deep, popping both
+- 51 - SUBASSETS - subtract assets on top of stack from assets 1 deep, popping both
+- 60 - GTZ - assets on top of stack, reduce to `any 1 []` or `all []` (all flows >= 0, at least one >0)
+- 61 - GEZ - assets on top of stack, reduce to `any 1 []` or `all []` (all flows >= 0)
+- 80-FF - reserved for multi-byte instructions

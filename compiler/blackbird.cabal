@@ -1,0 +1,464 @@
+cabal-version: 2.2
+name:          blackbird
+category:      Compiler
+version:       0.0
+license:       NONE
+license-file:  LICENSE
+author:        Edward A. Kmett
+maintainer:    Qredo LTD <support@qredo.com>
+stability:     experimental
+copyright:     Copyright (C) 2010-2014 McGraw Hill Financial
+               Copyright (C) 2023 Qredo Ltd
+synopsis:      DSL for authorization policies
+description:
+    .
+
+extra-source-files:
+  .travis.yml
+  .vim.custom
+  .gitignore
+  README.markdown
+  CHANGELOG.markdown
+  bin/overview.sh
+  etc/logo.txt
+  etc/logos.txt
+  etc/overview.png
+  opt/ekg/Blackbird/Monitor.hs
+  opt/no-ekg/Blackbird/Monitor.hs
+
+custom-setup
+  setup-depends: base     >=4.11 && <4.18,
+                 filepath >=1.4  && <1.5,
+                 process  >=1.6  && <1.7,
+                 Cabal    >=2.2  && <3.9,
+                 cabal-doctest >=1.0,
+
+-- TODO we can't use if to enable this by default on not-windows due
+-- to https://github.com/haskell/cabal/issues/2429
+flag ekg
+  manual: True
+  default: False
+
+-- `cabal install --enable-tests -f-doctests` to disable doctest suite
+flag doctests
+  manual: True
+  default: True
+
+-- `cabal install --enable-tests -f-properties` to disable properties suite
+flag properties
+  manual: True
+  default: True
+
+-- `cabal install --enable-tests -f-unit-tests` to disable unit-tests suite
+flag unit-tests
+  manual: True
+  default: True
+
+-- `cabal install -fj` to enable parallel builds. This may trigger open issues in GHC!
+flag j
+  manual: True
+  default: False
+
+-- `cabal install --enable-tests -f-hlint` to disable properties suite
+flag hlint
+  manual: True
+  default: True
+
+-- `cabal install -foptimized` enables optimizations
+flag optimized
+  manual: True
+  default: False
+
+-- `cabal install -f-core-echo` disables building the core-echo tool.
+flag core-echo
+  manual: True
+  default: True
+
+-- `cabal install -f-repl` to disable compiling the repl
+flag repl
+  manual: True
+  default: True
+
+-- `cabal install -fq` to quiet down the build messages
+flag q
+  manual: True
+  default: False
+
+common executable
+  default-language: Haskell2010
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+
+  if flag(optimized)
+    ghc-options: -funbox-strict-fields -O2
+  else
+    ghc-options: -O0
+
+common test-suite
+  default-language: Haskell2010
+  ghc-options:      -Wall -threaded -rtsopts -with-rtsopts=-N
+                    -Wno-orphans
+                    -Wno-unused-top-binds
+                    -Wno-missing-signatures
+                    -Wno-incomplete-patterns
+                    -Wno-unused-matches
+                    -Wno-name-shadowing
+                    -Wno-type-defaults
+
+library
+  default-language: Haskell2010
+  hs-source-dirs: src
+
+  exposed-modules:
+    Blackbird.Builtin
+    Blackbird.Builtin.Core
+    Blackbird.Builtin.Global
+    Blackbird.Builtin.Head
+    Blackbird.Builtin.Pattern
+    Blackbird.Builtin.Term
+    Blackbird.Builtin.Type
+    Blackbird.Console.Command
+    Blackbird.Console.Completion
+    Blackbird.Console.Module
+    Blackbird.Console.Options
+    Blackbird.Console.State
+    Blackbird.Console.Unicode
+    Blackbird.Constraint.Env
+    Blackbird.Constraint.Simplification
+    Blackbird.Core.Lint
+    Blackbird.Core.Module
+    Blackbird.Core.Optimizer
+    Blackbird.Core.Compiler
+    Blackbird.Diagnostic
+    Blackbird.Inference.Kind
+    Blackbird.Inference.Module
+    Blackbird.Inference.Type
+    Blackbird.Inference.Witness
+    Blackbird.Interchange.Policy
+    Blackbird.Interchange.Witness
+    Blackbird.Interpreter
+    Blackbird.Interpreter.Policy
+    Blackbird.Loader.Core
+    Blackbird.Loader.Filesystem
+    Blackbird.Loader.MapCache
+    Blackbird.Monitor
+    Blackbird.Monitor.Combinators
+    Blackbird.Monitor.Exception
+    Blackbird.Monitor.Options
+    Blackbird.Native.Policy
+    Blackbird.Native.Witness
+    Blackbird.Parser
+    Blackbird.Parser.Data
+    Blackbird.Parser.Global
+    Blackbird.Parser.Keywords
+    Blackbird.Parser.Kind
+    Blackbird.Parser.Literal
+    Blackbird.Parser.Module
+    Blackbird.Parser.Pattern
+    Blackbird.Parser.Policy
+    Blackbird.Parser.Resolver
+    Blackbird.Parser.State
+    Blackbird.Parser.Style
+    Blackbird.Parser.Trifecta
+    Blackbird.Parser.Type
+    Blackbird.Parser.Term
+    Blackbird.Pattern.Env
+    Blackbird.Pattern.Matching
+    Blackbird.Pattern.Matrix
+    Blackbird.Pretty
+    Blackbird.Pretty.Core
+    Blackbird.Pretty.G
+    Blackbird.Pretty.Global
+    Blackbird.Pretty.Kind
+    Blackbird.Pretty.Meta
+    Blackbird.Pretty.Literal
+    Blackbird.Pretty.Pattern
+    Blackbird.Pretty.Policy
+    Blackbird.Pretty.Term
+    Blackbird.Pretty.Type
+    Blackbird.Pretty.Witness
+    Blackbird.Syntax
+    Blackbird.Syntax.Class
+    Blackbird.Syntax.G
+    Blackbird.Syntax.Constructor
+    Blackbird.Syntax.Convention
+    Blackbird.Syntax.Core
+    Blackbird.Syntax.Data
+    Blackbird.Syntax.Digest
+    Blackbird.Syntax.Global
+    Blackbird.Syntax.Head
+    Blackbird.Syntax.Hint
+    Blackbird.Syntax.Id
+    Blackbird.Syntax.Instance
+    Blackbird.Syntax.Kind
+    Blackbird.Syntax.Literal
+    Blackbird.Syntax.Module
+    Blackbird.Syntax.ModuleName
+    Blackbird.Syntax.Name
+    Blackbird.Syntax.Pattern
+    Blackbird.Syntax.Scope
+    Blackbird.Syntax.Sort
+    Blackbird.Syntax.Term
+    Blackbird.Syntax.Type
+    Blackbird.Unification.Class
+    Blackbird.Unification.Data
+    Blackbird.Unification.Kind
+    Blackbird.Unification.Meta
+    Blackbird.Unification.Sharing
+    Blackbird.Unification.Type
+    Blackbird.Version
+    Demo.Server
+    Proto3.X
+
+  build-depends:
+    adjunctions               >= 4.0.3,
+    aeson,
+    base                      >= 4,
+    base16,
+    -- bifunctors                >= 4.1.1,
+    binary                    >= 0.7.1,
+    bound                     >= 1.0.3,
+    bytes                     >= 0.11,
+    bytestring                >= 0.10,
+    cereal                    >= 0.4.0.1,
+    comonad                   >= 4,
+    containers                >= 0.5,
+    cryptohash                >= 0.11,
+    data-default              >= 0.5,
+    directory                 >= 1.2.1.0,
+    distributive              >= 0.4.1,
+    either                    >= 0.0,
+    exceptions                >= 0.4,
+    filepath                  >= 1.3,
+    file-embed                >= 0.0.6,
+    generic-data              >= 0.0,
+    generics-sop,
+    ghc-prim,
+    groom                     >= 0.1.2,
+    hashable                  >= 1.2,
+    haskeline                 >= 0.7.0.3,
+    hyphenation               >= 0.4,
+    lens                      >= 4.4,
+    mtl                       >= 2.1,
+    monad-st                  >= 0.2.3,
+    optparse-applicative      >= 0.11,
+    parsers                   >= 0.8,
+    prelude-extras            >= 0.3,
+    prettyprinter             >= 0.0,
+    prettyprinter-ansi-terminal >= 0.0,
+    primitive                 >= 0.5.2.1,
+    profunctors               >= 4.2,
+    proto3-suite,
+    proto3-wire,
+    random                    >= 1.0.0.3,
+    reducers,
+    -- semigroups                >= 0.9,
+    snap-core,
+    snap-server,
+    split                     >= 0.2.1.1,
+    tagged                    >= 0.7,
+    text                      >= 1.1,
+    time                      >= 1.4,
+    transformers              >= 0.3,
+    -- transformers-compat       >= 0.4,
+    trifecta                  >= 1.7.1.1,
+    unordered-containers      >= 0.2.3,
+    utf8-string               >= 0.3.7,
+    vector                    >= 0.10
+    -- void                      >= 0.6
+
+  if flag(ekg)
+    build-depends:
+      ekg      >= 0.4 && < 0.5,
+      process  >= 1.2 && < 1.3
+    hs-source-dirs: opt/ekg
+  else
+    hs-source-dirs: opt/no-ekg
+
+  other-modules: Paths_blackbird,
+                 Generic.Data.Two
+  ghc-options: -Weverything -Werror -Wno-unused-packages -Wno-unused-top-binds -Wno-implicit-prelude -Wno-safe -Wno-unsafe -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-operator-whitespace -Wno-missing-deriving-strategies -Wno-missing-local-signatures -Wno-partial-fields
+
+  if flag(optimized)
+    ghc-options: -funbox-strict-fields -O2
+  else
+    ghc-options: -O0
+
+  if flag(q)
+    ghc-options: -v0
+
+  if flag(j)
+    ghc-options: -j3
+
+executable core-echo
+  import: executable
+  hs-source-dirs: exe/core-echo
+  main-is: Main.hs
+
+  if !flag(core-echo)
+    buildable: False
+  else
+    build-depends:
+      base < 5,
+      binary,
+      blackbird,
+      bytestring
+
+executable repl
+  import: executable
+  hs-source-dirs: exe/repl
+  main-is: Main.hs
+
+  if flag(ekg)
+    ghc-options: -with-rtsopts=-T
+
+  if !flag(repl)
+    buildable: False
+  else
+    build-depends:
+      base < 5,
+      blackbird,
+      data-default,
+      haskeline,
+      lens,
+      mtl,
+      optparse-applicative
+
+executable blackbird
+  import: executable
+  hs-source-dirs: exe/compiler
+  main-is: Main.hs
+
+  if flag(ekg)
+    ghc-options: -with-rtsopts=-T
+
+  build-depends:
+    base < 5,
+    blackbird,
+    bound                     >= 1.0.3,
+    bytestring,
+    data-default,
+    lens,
+    mtl,
+    optparse-applicative,
+    parsers                   >= 0.8,
+    text                      >= 1.1,
+    trifecta                  >= 1.7.1.1,
+    unordered-containers      >= 0.2.3,
+    vector                    >= 0.10
+
+executable blackbird-demo
+  import: executable
+  hs-source-dirs: exe/demo
+  main-is: Main.hs
+  build-depends: base, blackbird
+
+test-suite unit-tests
+  import:           test-suite
+  type:             exitcode-stdio-1.0
+  main-is:          UnitTests.hs
+  hs-source-dirs:   tests/unit-tests
+
+  if flag(j)
+    ghc-options: -j3
+
+  other-modules:
+    LoaderTests
+    ParserTests
+    TestDef
+
+  if !flag(unit-tests)
+    buildable: False
+  else
+    build-depends:
+      base,
+      blackbird,
+      filemanip             >= 0.3.6.2,
+      filepath,
+      lens,
+      HUnit,
+      test-framework        >= 0.6,
+      test-framework-hunit,
+      text,
+      transformers,
+      transformers-compat,
+      unordered-containers
+
+-- Verify properties with QuickCheck
+test-suite properties
+  import:           test-suite
+  type:             exitcode-stdio-1.0
+  main-is:          properties.hs
+  hs-source-dirs:   tests tests/properties
+
+  if flag(j)
+    ghc-options: -j3
+
+  other-modules:
+    Arbitrary.Arbitrary
+    Arbitrary.CoreArbitrary
+    Arbitrary.SyntaxArbitrary
+    Binary
+    Inference
+    Loader
+    Parser
+    Pattern
+    Syntax
+    Var
+
+  if !flag(properties)
+    buildable: False
+  else
+    build-depends:
+      base,
+      bifunctors                 >= 4.2,
+      binary,
+      bound                      >= 2.0,
+      bytestring,
+      containers,
+      blackbird,
+      hashable                   >= 1.2.3.1,
+      lens,
+      monad-st,
+      prelude-extras,
+      QuickCheck                 >= 2.7,
+      quickcheck-instances       >= 0.3.1,
+      semigroups                 >= 0.16.0.1,
+      test-framework             >= 0.6,
+      test-framework-quickcheck2 >= 0.2,
+      test-framework-th          >= 0.2,
+      transformers,
+      unordered-containers,
+      void                       >= 0.6     && < 1
+
+-- Currently broken
+test-suite hlint
+  import:           test-suite
+  buildable:        False
+  type:             exitcode-stdio-1.0
+  main-is:          hlint.hs
+  hs-source-dirs:   tests
+
+  if !flag(hlint)
+    buildable: False
+  else
+    build-depends:
+      base,
+      hlint >= 1.7
+
+-- Currently broken
+-- Verify the results of the examples
+test-suite doctests
+  import:           test-suite
+  buildable:        False
+  type:             exitcode-stdio-1.0
+  main-is:          doctests.hs
+  hs-source-dirs:   tests
+
+  if !flag(doctests)
+    buildable: False
+  else
+    build-depends:
+      base,
+      directory >= 1.0,
+      doctest >= 0.9.1,
+      filepath

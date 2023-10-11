@@ -1,0 +1,221 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title> Blackbird </title>
+    <style>
+      #valid, .warning, .error, .success {
+        border-radius: 0.25em;
+        border: 1px solid;
+        transition: max-height 0.25s ease;
+        padding: 0.75em;
+        margin: 0.5em;
+        margin-left: 0;
+      }
+      #signatures {
+        margin-left: 0;
+        border-radius: 0.25em;
+      }
+      #valid::before {
+        font-size: 300%;
+        display: none;
+        margin: 0 0.25em 0 0;
+      }
+      .yes, .success {
+        border-color: green;
+        background: lightgreen;
+      }
+      .yes#valid::before {
+        display: inline;
+        content: "✅";
+      }
+      .no, .error {
+        border-color: deeppink;
+        background: pink;
+      }
+      .no#valid::before {
+        display: inline;
+        content: "❌";
+      }
+      .warning {
+        border-color: orange;
+        background: peachpuff;
+      }
+      .warning:empty, .error:empty {
+        display: none;
+        max-height: 0;
+      }
+      b.participant {
+        background: lightgrey;
+        border: 0.25px solid #000;
+        border-radius: 0.1em;
+        padding: 3px;
+        font-weight: normal;
+        box-shadow: inset 1px 1px 3px white;
+      }
+      #serializations {
+        overflow-x: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source" rows="2" cols="80" placeholder="traders = [@T1,@T2,@T3]; any 2 traders or @P">traders = [@T1,@T2,@T3]; any 2 traders or @P</textarea>
+    <div id="serializations">
+      <pre id="parse"></pre>
+      <pre id="protobuffer"></pre>
+    </div>
+    <hr />
+    <fieldset id="signatures"></fieldset>
+    <div id="stallers" class="warning"></div>
+    <div id="valid">
+      <div id="valid-message"></div>
+      <div id="witness-signers"></div>
+      <div id="witness-protobuffer"></div>
+      <div id="witness-prettyprint"></div>
+    </div>
+
+    <template>
+      <div>
+        <input type="checkbox"/>
+        <label></label>
+      </div>
+    </template>
+
+    <script>
+      const el = {
+        source         : document.getElementById('source'),
+        parse          : document.getElementById('parse'),
+        protobuffer    : document.getElementById('protobuffer'),
+        serializations : document.getElementById('serializations'),
+        stallers       : document.getElementById('stallers'),
+        valid          : document.getElementById('valid'),
+        validMsg       : document.getElementById('valid-message'),
+        signatures     : document.getElementById('signatures'),
+        template       : document.querySelector('template'),
+        witness : {
+          signers     : document.getElementById('witness-signers'),
+          protobuffer : document.getElementById('witness-protobuffer'),
+          prettyprint : document.getElementById('witness-prettyprint'),
+        },
+      };
+
+      const server = 'http://localhost:8000/';
+      let signatures = {};
+
+      window.addEventListener('load', compile);
+      source.addEventListener('input', e => compile());
+
+      function request(url, val, receive) {
+        const req = new XMLHttpRequest();
+        req.addEventListener('load', ev => receive(ev.target));
+        req.open('POST', url);
+        req.send(JSON.stringify(val));
+      }
+
+      function mkCheckbox (lbl, checked, oninput) {
+        const clone = el.template.content.cloneNode(true);
+        clone.querySelector('label').textContent = lbl;
+        const checkbox = clone.querySelector('input');
+        checkbox.checked = checked;
+        if (oninput)
+          checkbox.addEventListener('input', oninput);
+        return clone;
+      }
+
+      function resetSignatures () {
+        el.signatures.textContent = '';
+        signatures = {};
+        el.valid.style.display = 'none';
+      }
+
+      function verify() {
+        function receive(xhr) {
+          setValid(JSON.parse(xhr.response));
+        }
+        const signers = Object.entries(signatures).filter(([k, v]) => v.checked).map(([k, v]) => k);
+        request(server + 'verify', [el.parse.textContent, signers], receive);
+      }
+
+      function setValid(valid) {
+        if(valid.Right) {
+          el.valid.className = "no";
+          el.validMsg.textContent = "Needed: " + valid.Right;
+          el.witness.signers.textContent = "";
+          el.witness.protobuffer.textContent = "";
+          el.witness.prettyprint.textContent = "";
+        } else {
+          el.valid.className = "yes";
+          el.validMsg.textContent = "";
+          const w = valid.Left;
+          el.witness.signers.innerHTML = "Signers: " + "<pre>" + w.signers + "</pre>";
+          el.witness.protobuffer.innerHTML = "Witness protobuffer: " + "<pre>" + w.protobuffer + "</pre>";
+          el.witness.prettyprint.innerHTML = "Witness:" + "<pre>" + w.prettyprint + "</pre>";
+        }
+      }
+
+      function setStallers(stallers) {
+        stallers = stallers.map(x => { const y = document.createElement("b"); y.className="participant"; y.textContent = x[1]; return y; });
+        if (stallers.length == 0) {
+          el.stallers.textContent = "";
+          return;
+        }
+        el.stallers.textContent = "This policy is likely to stall if ";
+        if (stallers.length == 1) {
+          el.stallers.appendChild(stallers[0]);
+        } else {
+          const final = stallers.pop();
+          const penultimate = stallers.pop();
+          stallers.forEach(x => { el.stallers.appendChild(x); el.stallers.appendChild(document.createTextNode(", ")); });
+          el.stallers.appendChild(penultimate);
+          el.stallers.appendChild(document.createTextNode(" or "));
+          el.stallers.appendChild(final);
+        }
+        el.stallers.appendChild(document.createTextNode(" is not available."));
+      }
+
+      function setSigning(sig, checked) {
+        signatures[sig].checked = checked;
+        verify();
+      }
+
+      function compile() {
+        function receive(xhr) {
+          const oldSignatures = signatures;
+          resetSignatures();
+          if(xhr.status != 200) {
+            el.valid.style.display = 'none';
+            el.parse.textContent = xhr.response;
+            el.protobuffer.textContent = '';
+            el.serializations.className = "error";
+            el.signatures.disabled = true;
+            setValid(["a policy"]);
+            setStallers([]);
+            return;
+          }
+          const resp = JSON.parse(xhr.response);
+          el.signatures.disabled = false;
+          el.parse.textContent = resp.parse;
+          el.protobuffer.textContent = resp.protobuffer;
+          el.serializations.className = "success";
+          setStallers(resp.stallers);
+          resp.signatures.forEach(([key, lbl]) => {
+            signatures[key] = {
+              checked: oldSignatures[key]?.checked || false,
+              label: lbl,
+            };
+            el.signatures.appendChild(mkCheckbox(lbl, signatures[key].checked, e => setSigning(key, e.target.checked)));
+          });
+          el.valid.style.display = '';
+          verify();
+        }
+
+        if (source.value == '') {
+          resetSignatures();
+          el.parse.textContent = '';
+          el.protobuffer.textContent = '';
+          el.serializations.className = '';
+        } else
+          request(server + 'compile', source.value, receive)
+      }
+    </script>
+  </body>
+</html>

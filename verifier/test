@@ -1,0 +1,2 @@
+dir=golang/impl
+wgo -file .go -dir $dir -cd $dir clear clear :: go test -coverprofile=$(mktemp $template)

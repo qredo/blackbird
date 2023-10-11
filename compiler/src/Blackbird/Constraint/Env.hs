@@ -1,0 +1,144 @@
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+
+module Blackbird.Constraint.Env
+  ( MonadConstraint(..)
+  , CM(..)
+  , ConstraintEnv(..)
+  , HasConstraintEnv(..)
+  , dummyConstraintEnv
+  , viewConstraint
+  , superclasses
+  ) where
+
+import Bound
+import Control.Applicative hiding (empty)
+import Control.Lens
+import Control.Monad hiding (sequence)
+import Control.Monad.ST.Class
+import Control.Monad.Trans.Maybe
+import Data.Bitraversable
+import Data.Map as Map hiding (map, delete, filter)
+import Data.Text (unpack)
+import Data.Void
+import Blackbird.Builtin.Global (fromIntegerToIntg, fromIntegerToLongg)
+import Blackbird.Builtin.Head
+import Blackbird.Builtin.Type as Type
+import Blackbird.Syntax ((~>))
+import Blackbird.Syntax.Class
+import Blackbird.Syntax.Core as Core hiding (App, Var)
+import Blackbird.Syntax.Global as Global
+import Blackbird.Syntax.Instance as Instance
+import Blackbird.Syntax.Kind as Kind hiding (Var)
+import Blackbird.Syntax.Literal
+import Blackbird.Syntax.Name
+import Blackbird.Syntax.Type as Type
+import Blackbird.Unification.Meta
+import Prelude hiding (sequence)
+
+data ConstraintEnv cc = ConstraintEnv
+  { _classes   :: Map Global (Class Void Void)
+  , _instances :: Map Global [Instance cc]
+  }
+
+makeClassy ''ConstraintEnv
+
+dummyConstraintEnv :: ConstraintEnv cc
+dummyConstraintEnv = ConstraintEnv
+  { _classes = fromList [(lame, clame), (fromInteg, cfromInteger)]
+  , _instances = fromList [ (lame, [ilameI, ilameL])
+                          , (fromInteg, [ifromIntegerI, ifromIntegerL])
+                          ]
+  }
+ where
+ -- class Lame a where lame :: a
+ clame =
+   Class []
+         [(Just "a", Scope star)]
+         []
+         (singleton (builtin_ "lame") . Var $ B 0)
+         empty
+ -- instance Lame Int where lame = 5
+ dlameI = Dict [] [_Lit # Int 5]
+ ilameI = Instance [] hlameI dlameI
+ -- instance Lame Long where lame = 37
+ dlameL = Dict [] [_Lit # Long 37]
+ ilameL = Instance [] hlameL dlameL
+
+ -- class FromInteger a where fromInteger :: Integer -> a
+ cfromInteger =
+   Class []
+         [(Just "a", Scope star)]
+         []
+         (singleton (builtin_ "fromInteger") $ integer ~> (Var $ B 0))
+         empty
+ -- instance FromInteger Int where fromInteger = fromIntegerToInt
+ dfromIntegerI = Dict [] [_Global # fromIntegerToIntg]
+ ifromIntegerI = Instance [] hfromIntegerI dfromIntegerI
+
+ -- instance FromInteger Long where fromInteger = fromIntegerToLong
+ dfromIntegerL = Dict [] [_Global # fromIntegerToLongg]
+ ifromIntegerL = Instance [] hfromIntegerL dfromIntegerL
+
+class (cc ~ Cv m, MonadMeta s m) => MonadConstraint cc s m where
+  type Cv m
+  askConstraint :: m (ConstraintEnv cc)
+  localConstraint
+    :: (ConstraintEnv cc -> ConstraintEnv cc) -> m a -> m a
+
+instance MonadConstraint cc s m => MonadConstraint cc s (MaybeT m) where
+  type Cv (MaybeT m) = Cv m
+  askConstraint     = MaybeT $ fmap Just askConstraint
+  localConstraint f = MaybeT . localConstraint f . runMaybeT
+
+newtype CM cc s a = CM { runCM :: ConstraintEnv cc -> M s a }
+
+instance Functor (CM cc s) where
+  fmap f (CM e) = CM $ fmap f <$> e
+
+instance Applicative (CM cc s) where
+  pure = CM . pure . pure
+  CM f <*> CM x = CM $ liftM2 (<*>) f x
+
+instance Monad (CM cc s) where
+  CM m >>= f = CM $ \e -> m e >>= \x -> runCM (f x) e
+
+instance MonadFail (CM cc s) where
+  fail msg = CM . const $ fail msg
+
+instance MonadST (CM cc s) where
+  type World (CM cc s) = s
+  liftST m = CM . const $ liftST m
+
+instance MonadMeta s (CM cc s) where
+  askMeta = CM $ const askMeta
+  localMeta f (CM m) = CM $ localMeta f . m
+
+instance MonadConstraint cc s (CM cc s) where
+  type Cv (CM cc s) = cc
+  askConstraint = CM $ \de -> pure de
+  localConstraint f (CM m) = CM $ \de -> m $ f de
+
+viewConstraint :: MonadConstraint cc s m => Getting a (ConstraintEnv cc) a -> m a
+viewConstraint g = view g <$> askConstraint
+
+superclasses :: MonadConstraint cc s m => Typ k t -> m [Typ k t]
+superclasses = go []
+ where
+ go stk (App f x) = go (x:stk) f
+ go stk (HardType (Con g _)) = viewConstraint (classes.at g) >>= \ xs -> case xs of
+   Just clazz' -> traverse (fmap join . bitraverse todo look . view trivialTK) $ clazz'^.context
+    where look i | Just t <- stk ^? ix i = pure t
+                 | otherwise = fail "Under-applied class"
+          todo _ = error "TODO: application of classes to particular kinds?"
+   Nothing -> fail $ "Unknown class: " ++ unpack (g^.name)
+ go _   _ = fail "Malformed class"

@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package com.qredo.blackbird;
+
+enum AssetProtocolTag {
+  ASSET_PROTOCOL_UNSPECIFIED = 0;
+  ASSET_PROTOCOL_BTC = 1;
+  ASSET_PROTOCOL_EVM = 2;
+  ASSET_PROTOCOL_ERC20 = 3;
+  ASSET_PROTOCOL_COSMOS = 4;
+}
+
+message Asset {
+  AssetProtocolTag tag = 1;
+  bytes chain_id = 2;
+  string address_prefix = 3;
+  bytes raw_address = 5;
+  bytes selector = 6;
+}
+
+message AssetFlow {
+  string address_prefix = 1;
+  string cooked_address = 2;
+  bytes raw_address = 3;
+  map<uint64,bytes> adjustments = 4;
+  bool anti_replay = 5;
+}
+
+enum TransactionTag {
+  TRANSACTION_UNSPECIFIED = 0;
+  TRANSACTION_IMMEDIATE = 1;
+}
+
+message Transaction {
+  TransactionTag tag = 1;
+  repeated Asset assets = 2;
+  repeated AssetFlow flows = 3;
+  uint64 focus = 4;
+}
+
+enum PolicyTag {
+  POLICY_UNSPECIFIED = 0;
+  POLICY_ALL = 1;
+  POLICY_ANY = 2;
+  POLICY_SIGNATURE = 3;
+  POLICY_REF_LOCAL = 4;
+  POLICY_ASSETS = 5;
+  POLICY_LIST = 6;
+  POLICY_CLOSURE = 7;
+  POLICY_TABLE = 16;
+  POLICY_TRANSACTION = 17;
+  POLICY_ASSET_FLOW = 18;
+  POLICY_REF_TEMP = 255;
+}
+
+message Policy {
+  PolicyTag tag = 1;
+  uint64 threshold = 2;
+  repeated Policy subpolicies = 3;
+  string address_prefix = 16;
+  oneof address {
+    string cooked_address = 4;
+    bytes raw_address = 5;
+  }
+  map<uint64,bytes> assets = 6;
+  repeated Asset asset_defs = 7;
+  bytes thunk = 8;
+  uint64 ref_id = 9;
+  Transaction transaction = 17;
+}
+
+enum WitnessTag {
+  WITNESS_UNSPECIFIED = 0;
+  WITNESS_GUESS = 1;
+  WITNESS_ALL = 2;
+  WITNESS_ANY = 3;
+  WITNESS_PRECHECKED_SIGNATURE = 4;
+  WITNESS_TABLE = 5;
+  WITNESS_EVAL = 6;
+  WITNESS_REF = 7;
+}
+
+message Witness {
+  WitnessTag tag = 1;
+  repeated Witness all_witnesses = 2;
+  map<uint64,Witness> any_witnesses = 3;
+  Witness next_witness = 4;
+}

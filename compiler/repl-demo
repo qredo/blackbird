@@ -1,0 +1,4 @@
+# touching index.html doesn't cause :r to recompile the including haskell module
+# embedFile doesn't seem to properly trigger https://hackage.haskell.org/package/template-haskell-2.19.0.0/docs/Language-Haskell-TH-Syntax.html#v:addDependentFile
+# possibly still https://gitlab.haskell.org/ghc/ghc/-/issues/18330
+while true; do touch src/Demo/Server.hs; sleep 1; done & cabal v2-repl
