@@ -30,10 +30,10 @@ let
     };
   };
 
-  # merge into master of https://github.com/NixOS/nixpkgs/pull/248027
+  # merge into master of https://github.com/NixOS/nixpkgs/pull/250472
   nixpkgsSrc = builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/8ed712ec90468c931713e5ec60bd9e6678daf8a8.tar.gz";
-    sha256 = "sha256:1mk3zl8rv9fgnq8l62vz7dq0sag0cvcyf0qkbkp9y2vff2yv0x7r";
+    url = "https://github.com/NixOS/nixpkgs/archive/cbc976a97c3372e1eec5db021db994b85e098d12.tar.gz";
+    sha256 = "sha256:0s8n95sfjijp8pdfg3hnl6mf7a4ralgbkbsd4s31ah49vyi75jmd";
   };
 
   nixpkgs = import nixpkgsSrc { inherit config; };
