@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 func assetAuthority(a *pr.Asset) *KeyAuthority {

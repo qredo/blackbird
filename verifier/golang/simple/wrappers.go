@@ -1,8 +1,8 @@
 package simple
 
 import (
-	"gitlab.qredo.com/edmund/blackbird/verifier/golang/impl"
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	"github.com/qredo/blackbird/verifier/golang/impl"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 	"google.golang.org/protobuf/proto"
 )
 

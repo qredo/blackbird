@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"unicode/utf8"
 
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 type address2participant struct {

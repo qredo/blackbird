@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 type stack_frame interface {

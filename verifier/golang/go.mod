@@ -1,4 +1,4 @@
-module gitlab.qredo.com/edmund/blackbird/verifier/golang
+module github.com/qredo/blackbird/verifier/golang
 
 go 1.21
 

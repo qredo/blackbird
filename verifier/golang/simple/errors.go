@@ -1,7 +1,7 @@
 package simple
 
 import (
-	errors "gitlab.qredo.com/edmund/blackbird/verifier/golang/impl"
+	errors "github.com/qredo/blackbird/verifier/golang/impl"
 )
 
 type ErrCouldNotDecodePolicy = errors.ErrCouldNotDecodePolicy

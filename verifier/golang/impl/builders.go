@@ -1,7 +1,7 @@
 package impl
 
 import (
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 func Guess() *pr.Witness {
