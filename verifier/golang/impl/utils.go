@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"sort"
 
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 func ifThenElse[A any](b bool, t, f A) A {

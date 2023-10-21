@@ -3,7 +3,7 @@ package impl
 import (
 	"fmt"
 
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
 )
 
 func assumesSingletonTable[X any](x X) X {

@@ -1,7 +1,7 @@
 package simple
 
 import (
-	"gitlab.qredo.com/edmund/blackbird/verifier/golang/impl"
+	"github.com/qredo/blackbird/verifier/golang/impl"
 )
 
 type Authority = impl.Authority

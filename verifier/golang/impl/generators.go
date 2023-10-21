@@ -9,8 +9,8 @@ import (
 
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
-	"gitlab.qredo.com/edmund/blackbird/verifier/golang/tree"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
+	"github.com/qredo/blackbird/verifier/golang/tree"
 )
 
 func guessable(r *rand.Rand, w *pr.Witness) *pr.Witness {

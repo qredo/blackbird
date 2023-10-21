@@ -7,8 +7,8 @@ import (
 
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/prop"
-	pr "gitlab.qredo.com/edmund/blackbird/verifier/golang/protobuf"
-	"gitlab.qredo.com/edmund/blackbird/verifier/golang/tree"
+	pr "github.com/qredo/blackbird/verifier/golang/protobuf"
+	"github.com/qredo/blackbird/verifier/golang/tree"
 )
 
 var crunches []*regexp.Regexp = []*regexp.Regexp{
