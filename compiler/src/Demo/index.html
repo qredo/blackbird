@@ -65,6 +65,7 @@
     </div>
     <hr />
     <fieldset id="signatures"></fieldset>
+    <div id="warning" class="warning"></div>
     <div id="stallers" class="warning"></div>
     <div id="valid">
       <div id="valid-message"></div>
@@ -86,6 +87,7 @@
         parse          : document.getElementById('parse'),
         protobuffer    : document.getElementById('protobuffer'),
         serializations : document.getElementById('serializations'),
+        warning        : document.getElementById('warning'),
         stallers       : document.getElementById('stallers'),
         valid          : document.getElementById('valid'),
         validMsg       : document.getElementById('valid-message'),
@@ -172,6 +174,10 @@
         el.stallers.appendChild(document.createTextNode(" is not available."));
       }
 
+      function setWarning(w) {
+        el.warning.textContent = w;
+      }
+
       function setSigning(sig, checked) {
         signatures[sig].checked = checked;
         verify();
@@ -189,6 +195,7 @@
             el.signatures.disabled = true;
             setValid(["a policy"]);
             setStallers([]);
+            setWarning("");
             return;
           }
           const resp = JSON.parse(xhr.response);
@@ -196,6 +203,7 @@
           el.parse.textContent = resp.parse;
           el.protobuffer.textContent = resp.protobuffer;
           el.serializations.className = "success";
+          setWarning(resp.warning);
           setStallers(resp.stallers);
           resp.signatures.forEach(([key, lbl]) => {
             signatures[key] = {
