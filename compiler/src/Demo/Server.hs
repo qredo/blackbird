@@ -71,24 +71,27 @@ encodePB pb = Aeson.String . ("0x" <>) . encodeBase16 . Protobuffers.encode pb
 
 compile :: Snap ()
 compile = jsonRoute $ \(policySource :: Text) -> do
-  withParsedPolicy policySource $ \case
-    p
-      | not $ satisfiable p -> err "This policy cannot be satisfied."
-      | satisfies (const False) p -> err "This policy requires no approval."
-      | otherwise -> writeLBS $ Aeson.encode $ Map.fromList @Text @Aeson.Value
-        [ ("parse", Aeson.String $ tshow p)
-        , ("protobuffer", encodePB policyPB p)
-        , ("signatures", encodeSignatures $ signatures p)
-        , ("stallers", encodeSignatures $ fromMaybe Set.empty $ stallers p)
-        ]
-      where
-        encodeSignatures :: Set Address -> Aeson.Value
-        encodeSignatures = Aeson.Array . fmap encodeSignature . Vector.fromList . Set.toList
+  withParsedPolicy policySource $ \p -> writeLBS $ Aeson.encode $ Map.fromList @Text @Aeson.Value $
+    [ ("parse", Aeson.String $ tshow p)
+    , ("protobuffer", encodePB policyPB p)
+    , ("signatures", encodeSignatures $ signatures p)
+    , ("stallers", encodeSignatures $ fromMaybe Set.empty $ stallers p)
+    ] <> warnings p
+    where
+      warnings = \case
+        p | not $ satisfiable p -> warn "This policy cannot be satisfied."
+          | satisfies (const False) p -> warn "This policy requires no approval."
+          | otherwise -> []
 
-        encodeSignature :: Address -> Aeson.Value
-        encodeSignature a = Aeson.Array $ Vector.fromList [str a, str (prettyAddress a)]
-        where
-          str = Aeson.String . tshow
+      encodeSignatures :: Set Address -> Aeson.Value
+      encodeSignatures = Aeson.Array . fmap encodeSignature . Vector.fromList . Set.toList
+
+      encodeSignature :: Address -> Aeson.Value
+      encodeSignature a = Aeson.Array $ Vector.fromList [str a, str (prettyAddress a)]
+
+      str = Aeson.String . tshow
+
+      warn w = [("warning", Aeson.String w)]
 
 verifyHandler :: Snap ()
 verifyHandler = jsonRoute $ \(policyADT :: Text, sigADTs :: Set Text) ->
