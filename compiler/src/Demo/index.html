@@ -147,7 +147,7 @@
           el.validMsg.textContent = "";
           const w = valid.Left;
           el.witness.signers.innerHTML = "Signers: " + "<pre>" + w.signers + "</pre>";
-          el.witness.protobuffer.innerHTML = "Witness protobuffer: " + "<pre>" + w.protobuffer + "</pre>";
+          setProtobuffer(el.witness.protobuffer, w)
           el.witness.prettyprint.innerHTML = "Witness:" + "<pre>" + w.prettyprint + "</pre>";
         }
       }
@@ -177,6 +177,13 @@
         verify();
       }
 
+      function setProtobuffer(e, resp) {
+        e.innerHTML = "Protobuffer" + "<pre>"
+          + "\n  Base 16: " + resp.protobuffer_base16
+          + "\n  Base 64: " + resp.protobuffer_base64url
+          + "</pre>";
+      }
+
       function compile() {
         function receive(xhr) {
           const oldSignatures = signatures;
@@ -194,7 +201,7 @@
           const resp = JSON.parse(xhr.response);
           el.signatures.disabled = false;
           el.parse.textContent = resp.parse;
-          el.protobuffer.textContent = resp.protobuffer;
+          setProtobuffer(el.protobuffer, resp);
           el.serializations.className = "success";
           setStallers(resp.stallers);
           resp.signatures.forEach(([key, lbl]) => {
