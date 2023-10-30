@@ -214,6 +214,7 @@ library
     aeson,
     base                      >= 4,
     base16,
+    base64,
     -- bifunctors                >= 4.1.1,
     binary                    >= 0.7.1,
     bound                     >= 1.0.3,

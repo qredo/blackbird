@@ -19,6 +19,7 @@ import Data.Aeson qualified as Aeson
 import Data.Bifunctor (bimap)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 (encodeBase16)
+import Data.ByteString.Base64.URL (encodeBase64Unpadded)
 import Data.FileEmbed (embedFile, makeRelativeToProject)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
@@ -66,8 +67,8 @@ withParsedPolicy src f = do
     Left doc -> err $ tshow doc
     Right p -> f p
 
-encodePB :: Protobuffers.Msg pb a -> a -> Aeson.Value
-encodePB pb = Aeson.String . ("0x" <>) . encodeBase16 . Protobuffers.encode pb
+encodePB :: (ByteString -> Text) -> Protobuffers.Msg pb a -> a -> Aeson.Value
+encodePB f pb = Aeson.String . f . Protobuffers.encode pb
 
 compile :: Snap ()
 compile = jsonRoute $ \(policySource :: Text) -> do
@@ -77,7 +78,8 @@ compile = jsonRoute $ \(policySource :: Text) -> do
       | satisfies (const False) p -> err "This policy requires no approval."
       | otherwise -> writeLBS $ Aeson.encode $ Map.fromList @Text @Aeson.Value
         [ ("parse", Aeson.String $ tshow p)
-        , ("protobuffer", encodePB policyPB p)
+        , ("protobuffer_base16", encodePB (("0x" <>) . encodeBase16) policyPB p)
+        , ("protobuffer_base64url", encodePB encodeBase64Unpadded policyPB p)
         , ("signatures", encodeSignatures $ signatures p)
         , ("stallers", encodeSignatures $ fromMaybe Set.empty $ stallers p)
         ]
@@ -104,7 +106,8 @@ verifyHandler = jsonRoute $ \(policyADT :: Text, sigADTs :: Set Text) ->
     invalidSigs = flip mapMaybe (Set.toList sigADTs) $ \s -> maybe (Just s) (const Nothing) $ tread @Address s
 
     ppWitness (w, s) = Map.fromList @Text @Aeson.Value
-      [ ("protobuffer", encodePB witnessPB w)
+      [ ("protobuffer_base16", encodePB (("0x" <>) . encodeBase16) witnessPB w)
+      , ("protobuffer_base64url", encodePB encodeBase64Unpadded witnessPB w)
       , ("signers", Aeson.Array $ Vector.fromList $ fmap (Aeson.String . tshow . prettyAddress) $ Set.toList s)
       , ("prettyprint", Aeson.String $ Text.pack $ show $ prettyWitness w)
       ]
